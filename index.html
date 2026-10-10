@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محاكاة المسار التقني | Enterprise Role-Play</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+:root{--bg:#070f1a;--card:#0f1a2e;--card2:#142238;--line:#223654;--text:#eef5ff;--muted:#9fb1c9;--cyan:#38bdf8;--blue:#6366f1;--red:#f43f5e;--green:#10b981;--gold:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:'Cairo',sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.app{width:100%;max-width:850px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:30px;box-shadow:0 25px 60px rgba(0,0,0,0.6)}
+.screen{display:none}.screen.active{display:block}
+h1,h2,h3{margin:0}
+.badge{display:inline-block;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#38bdf820;color:var(--cyan);border:1px solid #38bdf840;margin-bottom:15px}
+.btn{display:block;width:100%;padding:14px 18px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--text);font:inherit;font-weight:700;text-align:right;cursor:pointer;transition:0.2s;margin-bottom:10px}
+.btn:hover:not(:disabled){border-color:var(--cyan);background:#1a2e4d;transform:translateY(-2px)}
+.btn.correct{border-color:var(--green);background:#10b98120;color:#6ee7b7}
+.btn.wrong{border-color:var(--red);background:#f43f5e20;color:#fca5a5}
+.roles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:20px 0}
+.role-card{background:var(--card2);border:2px solid var(--line);border-radius:16px;padding:20px;text-align:center;cursor:pointer;transition:0.2s}
+.role-card:hover{border-color:var(--cyan);transform:translateY(-3px)}
+.role-card.selected{border-color:var(--cyan);background:#38bdf810}
+.role-icon{font-size:35px;margin-bottom:10px}
+.stats-bar{display:flex;justify-content:space-between;background:var(--card2);padding:12px 18px;border-radius:12px;margin-bottom:20px;font-size:14px}
+.stats-bar span strong{color:var(--cyan)}
+.feedback{padding:15px;border-radius:12px;margin-top:15px;display:none;line-height:1.7;font-size:14px}
+.feedback.good{background:#10b98120;border:1px solid var(--green);color:#6ee7b7}
+.feedback.bad{background:#f43f5e20;border:1px solid var(--red);color:#fca5a5}
+.primary-btn{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#070f1a;border:none;width:100%;padding:14px;border-radius:12px;font-weight:900;cursor:pointer;margin-top:20px;font-size:16px}
+.primary-btn:hover{filter:brightness(1.1)}
+.footer-note{text-align:center;color:var(--muted);font-size:12px;margin-top:25px}
+@media(max-width:700px){.roles-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <!-- الشاشة الأولى: اختيار المهنة -->
+    <main id="screen-role" class="screen active">
+        <span class="badge">نظام المحاكاة المهنية</span>
+        <h1>اختر مستواك الوظيفي لبدء التحدي</h1>
+        <p style="color:var(--muted);margin:10px 0 20px;">كل مسار مهني له مهام وتحديات حقيقية تختلف حسب صلاحياتك وتخصصك.</p>
+        
+        <div class="roles-grid">
+            <div class="role-card" onclick="selectRole('technician')">
+                <div class="role-icon">💻</div>
+                <h3>فني شبكات</h3>
+                <p style="color:var(--muted);font-size:12px;margin-top:8px;">إدارة الكابلات، المنافذ، وحل مشاكل المستخدمين المباشرة.</p>
+            </div>
+            <div class="role-card" onclick="selectRole('engineer')">
+                <div class="role-icon">⚙️</div>
+                <h3>مهندس شبكات</h3>
+                <p style="color:var(--muted);font-size:12px;margin-top:8px;">إعداد الراوترات، الفلترة، تأمين وتصميم القطاعات (VLANs).</p>
+            </div>
+            <div class="role-card" onclick="selectRole('cto')">
+                <div class="role-icon">👔</div>
+                <h3>مدير تقني (CTO)</h3>
+                <p style="color:var(--muted);font-size:12px;margin-top:8px;">إدارة الميزانية، حماية البنية التحتية، ومواجهة أزمات الشركة الاستراتيجية.</p>
+            </div>
+        </div>
+        <button class="primary-btn" id="start-game-btn" style="opacity:0.5;pointer-events:none;" onclick="initGame()">ابدأ المحاكاة بهذا الدور ➔</button>
+    </main>
+
+    <!-- الشاشة الثانية: اللعب -->
+    <main id="screen-game" class="screen">
+        <div class="stats-bar">
+            <span>الوظيفة: <strong id="lbl-role">-</strong></span>
+            <span>النقاط: <strong id="lbl-score">0</strong></span>
+            <span>الحالة: <strong id="lbl-status" style="color:var(--green);">مستقر 100%</strong></span>
+        </div>
+        
+        <span class="badge" id="lbl-stage">الموقف 1 من 3</span>
+        <h2 id="q-title" style="margin:10px 0 15px;font-size:22px;">عنوان المشكلة</h2>
+        <p id="q-desc" style="color:var(--muted);line-height:1.8;margin-bottom:20px;">تفاصيل الموقف التقني...</p>
+        
+        <div id="choices-container"></div>
+        
+        <div id="game-feedback" class="feedback"></div>
+        <button id="next-q-btn" class="primary-btn" style="display:none;" onclick="nextStep()">الموقف التالي ➔</button>
+    </main>
+
+    <!-- الشاشة الثالثة: النتائج -->
+    <main id="screen-results" class="screen" style="text-align:center;">
+        <div style="font-size:50px;margin-bottom:10px;">🏆</div>
+        <h1>تم اجتياز المهام بنجاح!</h1>
+        <p style="color:var(--muted);margin:15px 0;" id="result-summary">أثبت جدارتك في إدارة المسار التقني.</p>
+        <div style="font-size:32px;font-weight:900;color:var(--cyan);margin:20px 0;" id="final-score-val">0 نقطة</div>
+        <button class="primary-btn" onclick="location.reload()">اختر وظيفة أخرى وابدأ من جديد 🔄</button>
+    </main>
+</div>
+
+<script>
+let selectedRole = null;
+let currentStep = 0;
+let score = 0;
+let health = 100;
+let answered = false;
+
+const scenarios = {
+    technician: [
+        {
+            title: "انقطاع الاتصال عن مكتب المحاسبة",
+            desc: "موظف المحاسبة يشتكي أن جهازه لا يتصل بالإنترنت ولا يشارك الملفات مع السيرفر المحلي، بينما بقية القسم يعملون طبيعيًا.",
+            choices: [
+                "تغيير كابل الشبكة (Ethernet) وفحص منفذ السويتش المرتبط بالمكتب.",
+                "عمل فورمات كامل لجهاز الكمبيوتر المكتبي.",
+                "إيقاف الراوتر الرئيسي للشركة وإعادة تشغيله."
+            ],
+            correct: 0,
+            why: "بما أن المشكلة محصورة في جهاز واحد فقط، فالمشكلة غالباً إما في الكابل أو منفذ السويتش (Port) ولا داعي لتعطيل الشركة كلها."
+        },
+        {
+            title: "تنبيه امتلاء ذاكرة التخزين المؤقت للسويتش",
+            desc: "لاحظت بطئاً شديداً في نقل البيانات عبر الشبكة المحلية داخل الدور الأرضي وجود ضغط هائل على أحد محولات الشبكة (Switch).",
+            choices: [
+                "تجاهل التنبيه لحين توقف الشبكة تماماً.",
+                "فحص حركة البيانات (Traffic) وتحديد الجهاز المتسبب في إرسال حزم بيانات وهمية (Broadcast Storm).",
+                "فصل جميع أجهزة القسم نهائياً."
+            ],
+            correct: 1,
+            why: "التشخيص الذكي لمصدر البث العشوائي أو الـ Broadcast Storm يحل المشكلة دون قطع الاتصال عن المستخدمين الأبرياء."
+        },
+        {
+            title: "شكوى من ضعف إشارة الواي فاي في قاعة الاجتماعات",
+            desc: "الإدارة تشتكي من تقطيع الاتصال بالإنترنت لاسلكياً أثناء الاجتماعات الهامة.",
+            choices: [
+                "شراء مقوي إشارة رخيص ووضعه في زاوية بعيدة.",
+                "تغيير قناة البث اللاسلكي (Channel) لتقليل التداخل الإشاري وفحص تغطية نقطة الوصول (Access Point).",
+                "منع استخدام الواي فاي نهائياً في قاعة الاجتماعات."
+            ],
+            correct: 1,
+            why: "تداخل القنوات اللاسلكية هو السبب الأكثر شيوعاً لبطء وتقطيع الواي فاي في الشركات، وضبط القناة يحل المشكلة جذرياً."
+        }
+    ],
+    engineer: [
+        {
+            title: "تصميم شبكات افتراضية (VLANs)",
+            desc: "طلب منك مديرك عزل شبكة قسم الموارد البشرية (HR) عن بقية أقسام الشركة أمنياً لمنع تسريب بيانات الموظفين.",
+            choices: [
+                "ربط جميع الأجهزة بسويتش واحد دون أي تقسيم.",
+                "إعداد VLAN مخصصة لقسم HR وتطبيق قواعد التوجيه (Routing) وحظر وصول البقية.",
+                "فصل كابلات الإنترنت عن قسم الموارد البشرية نهائياً."
+            ],
+            correct: 1,
+            why: "استخدام الـ VLANs هو المعيار الهندسي الصحيح لعزل الأقسام الحساسة أمنياً داخل نفس البنية التحتية."
+        },
+        {
+            title: "إعداد جدار حماية (Firewall) داخلي",
+            desc: "تريد منع الأجهزة المتصلة بالشبكة الداخلية من الوصول لمواقع مشبوهة قد تعرض شبكة الشركة لبرمجيات الفدية (Ransomware).",
+            choices: [
+                "تفعيل قواعد الحظر والفلترة (Access Control Lists - ACL) على الراوتر وحجب النطاقات الضارة.",
+                "الاعتماد على ضمير الموظفين وعدم تثبيت أي حماية.",
+                "إلغاء الإنترنت تماماً عن الشركة."
+            ],
+            correct: 0,
+            why: "استخدام الـ ACLs وقواعد الحماية المتقدمة على أجهزة التوجيه يضمن حماية استباقية لكافة الأجهزة بالشبكة."
+        },
+        {
+            title: "توزيع عناوين الـ IP (DHCP Lease Issue)",
+            desc: "بدأت تظهر رسالة تعارض عناوين IP (IP Address Conflict) لعدة أجهزة جديدة تنضم للشبكة صباحاً.",
+            choices: [
+                "ترك الأجهزة توزع الآيبيات عشوائياً.",
+                "توسيع نطاق الـ DHCP Scope وتحديد حجز عناوين ثابتة (Static IP) للأجهزة الحساسة كالطابعات والسيرفرات.",
+                "إغلاق خدمة الـ DHCP وإجبار كل موظف على وضع آيبي يدوياً للأبد."
+            ],
+            correct: 1,
+            why: "حجز العناوين الحرجة وتوسيع النطاق يمنع التداخل ويضمن استقرار توزيع العناوين بسلاسة."
+        }
+    ],
+    cto: [
+        {
+            title: "هجوم حجب الخدمة (DDoS Attack)",
+            desc: "في منتصف الليل، تعرض موقع الشركة لهجوم DDoS عنيف وأصبح موقع العرض متوقفاً تماماً عن العمل.",
+            choices: [
+                "تفعيل جدار حماية سحابي (مثل Cloudflare) وتوجيه حركة المرور المفلترة.",
+                "إعادة تشغيل السيرفر يدوياً كل 5 دقائق.",
+                "إغلاق الخوادم نهائياً حتى يمل المهاجم."
+            ],
+            correct: 0,
+            why: "الخدمات السحابية المتقدمة مثل Cloudflare هي الحل الاحترافي الوحيد لامتصاص وتصفية هجمات الـ DDoS الضخمة."
+        },
+        {
+            title: "تلف في قاعدة البيانات الرئيسية (DB Crash)",
+            desc: "حدث خطأ مفاجئ أثناء تحديث النظام الأساسي أدى لتوقف جدول العملاء بالكامل وضياع المدخلات الأخيرة.",
+            choices: [
+                "تعديل البيانات عشوائياً وبسرعة يدويًا.",
+                "استعادة آخر نسخة احتياطية سليمة (Automated Backup Restore) والتأكد من سلامة السجلات.",
+                "إبلاغ العملاء بأن الشركة أغلقت أبوابها."
+            ],
+            correct: 1,
+            why: "امتلاك خطة استجابة ونسخ احتياطي دوري سليم هو طوق النقاذ الأول لأي مدير تقني ناجح."
+        },
+        {
+            title: "أزمة الميزانية وتوسيع البنية التحتية",
+            desc: "الشركة نمت بشكل مفاجئ، والميزانية المتبقية محدودة، وعليك اختيار الاستثمار التقني الأمثل لمواكبة الضغط.",
+            choices: [
+                "رفض التوسع نهائياً وتجميد نمو الشركة.",
+                "إعادة هندسة السيرفرات الحالية واستغلال الموارد المهملة (Optimization) بأقل تكلفة ممكنة.",
+                "شراء أحدث الأجهزة الفارهة بغض النظر عن تفكك ميزانية الشركة."
+            ],
+            correct: 1,
+            why: "المدير التقني البارع يوازن بين كفاءة التشغيل المتاحة وحماية الميزانية عبر التحسين الذكي (Optimization)."
+        }
+    ]
+};
+
+function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    let btn = document.getElementById('start-game-btn');
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+}
+
+function initGame() {
+    currentStep = 0;
+    score = 0;
+    health = 100;
+    document.getElementById('lbl-role').textContent = selectedRole === 'technician' ? 'فني شبكات' : selectedRole === 'engineer' ? 'مهندس شبكات' : 'مدير تقني (CTO)';
+    loadQuestion();
+    document.getElementById('screen-role').classList.remove('active');
+    document.getElementById('screen-game').classList.add('active');
+}
+
+function loadQuestion() {
+    answered = false;
+    let list = scenarios[selectedRole];
+    let q = list[currentStep];
+    
+    document.getElementById('lbl-stage').textContent = `الموقف ${currentStep + 1} من ${list.length}`;
+    document.getElementById('lbl-score').textContent = score;
+    document.getElementById('q-title').textContent = q.title;
+    document.getElementById('q-desc').textContent = q.desc;
+    
+    let container = document.getElementById('choices-container');
+    container.innerHTML = '';
+    
+    q.choices.forEach((choice, index) => {
+        let btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerHTML = `<span style="color:var(--cyan);margin-left:8px;">[ ${['أ', 'ب', 'ج'][index]} ]</span> ${choice}`;
+        btn.onclick = () => checkAnswer(index);
+        container.appendChild(btn);
+    });
+    
+    document.getElementById('game-feedback').style.display = 'none';
+    document.getElementById('next-q-btn').style.display = 'none';
+}
+
+function checkAnswer(index) {
+    if (answered) return;
+    answered = true;
+    
+    let q = scenarios[selectedRole][currentStep];
+    let buttons = document.querySelectorAll('#choices-container .btn');
+    
+    buttons.forEach((b, i) => {
+        b.style.pointerEvents = 'none';
+        if (i === q.correct) b.classList.add('correct');
+        else if (i === index) b.classList.add('wrong');
+    });
+    
+    let isCorrect = index === q.correct;
+    if (isCorrect) {
+        score += 100;
+    } else {
+        health = Math.max(0, health - 25);
+    }
+    
+    document.getElementById('lbl-score').textContent = score;
+    let statusEl = document.getElementById('lbl-status');
+    statusEl.textContent = health >= 75 ? 'مستقر 100%' : health >= 40 ? 'تحت الضغط' : 'حرج جداً';
+    statusEl.style.color = health >= 75 ? 'var(--green)' : health >= 40 ? 'var(--gold)' : 'var(--red)';
+    
+    let feedback = document.getElementById('game-feedback');
+    feedback.style.display = 'block';
+    feedback.className = `feedback ${isCorrect ? 'good' : 'bad'}`;
+    feedback.innerHTML = `<strong>${isCorrect ? '✓ اختيار مهني سليم (+100 نقطة)' : '✕ ليس الإجراء الأنسب'}</strong><br>${q.why}`;
+    
+    let nextBtn = document.getElementById('next-q-btn');
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = currentStep === scenarios[selectedRole].length - 1 ? 'عرض تقييم الأداء النهائي ➔' : 'الموقف التالي ➔';
+}
+
+function nextStep() {
+    currentStep++;
+    if (currentStep < scenarios[selectedRole].length) {
+        loadQuestion();
+    } else {
+        showResults();
+    }
+}
+
+function showResults() {
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-results').classList.add('active');
+    document.getElementById('final-score-val').textContent = score + ' نقطة من 300';
+    document.getElementById('result-summary').textContent = `أتممت مهام مسار "${document.getElementById('lbl-role').textContent}" بكفاءة تشغيلية وقرارات تقنية تحاكي الواقع العملي.`;
+}
+</script>
+
+</body>
+</html>
